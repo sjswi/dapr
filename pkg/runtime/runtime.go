@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	rdbLoader "github.com/dapr/dapr/pkg/components/rdb"
 	"io"
 	"net"
 	nethttp "net/http"
@@ -215,6 +216,7 @@ type DaprRuntime struct {
 	httpMiddlewareRegistry     *httpMiddlewareLoader.Registry
 	configurationStoreRegistry *configurationLoader.Registry
 	lockStoreRegistry          *lockLoader.Registry
+	rdbLoaderRegistry          *rdbLoader.Registry
 	inputBindingsCtx           context.Context
 	inputBindingsCancel        context.CancelFunc
 
@@ -448,6 +450,7 @@ func (a *DaprRuntime) initRuntime(opts *runtimeOpts) error {
 	a.httpMiddlewareRegistry = opts.httpMiddlewareRegistry
 	a.lockStoreRegistry = opts.lockRegistry
 	a.workflowComponentRegistry = opts.workflowComponentRegistry
+	a.rdbLoaderRegistry = opts.rdbRegistry
 
 	a.initPluggableComponents()
 
@@ -2785,6 +2788,8 @@ func (a *DaprRuntime) doProcessOneComponent(category components.Category, comp c
 		return a.initLock(comp)
 	case components.CategoryWorkflow:
 		return a.initWorkflowComponent(comp)
+	case components.CategoryRDB:
+		return a.initRDB(comp)
 	}
 	return nil
 }
@@ -3573,6 +3578,10 @@ func (a *DaprRuntime) stopTrace() {
 	} else {
 		a.tracerProvider = nil
 	}
+}
+
+func (a *DaprRuntime) initRDB(comp componentsV1alpha1.Component) error {
+	return nil
 }
 
 // ShutdownSignal returns a signal that receives a message when the app needs to shut down

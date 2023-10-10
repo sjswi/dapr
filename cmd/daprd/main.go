@@ -19,7 +19,6 @@ import (
 	"go.uber.org/automaxprocs/maxprocs"
 
 	// Register all components
-	_ "github.com/dapr/dapr/cmd/daprd/components"
 
 	bindingsLoader "github.com/dapr/dapr/pkg/components/bindings"
 	configurationLoader "github.com/dapr/dapr/pkg/components/configuration"
@@ -28,6 +27,7 @@ import (
 	httpMiddlewareLoader "github.com/dapr/dapr/pkg/components/middleware/http"
 	nrLoader "github.com/dapr/dapr/pkg/components/nameresolution"
 	pubsubLoader "github.com/dapr/dapr/pkg/components/pubsub"
+	rdbLoader "github.com/dapr/dapr/pkg/components/rdb"
 	secretstoresLoader "github.com/dapr/dapr/pkg/components/secretstores"
 	stateLoader "github.com/dapr/dapr/pkg/components/state"
 	workflowsLoader "github.com/dapr/dapr/pkg/components/workflows"
@@ -60,7 +60,7 @@ func main() {
 	bindingsLoader.DefaultRegistry.Logger = logContrib
 	workflowsLoader.DefaultRegistry.Logger = logContrib
 	httpMiddlewareLoader.DefaultRegistry.Logger = log // Note this uses log on purpose
-
+	rdbLoader.DefaultRegistry.Logger = logContrib
 	stopCh := runtime.ShutdownSignal()
 
 	err = rt.Run(
@@ -74,6 +74,7 @@ func main() {
 		runtime.WithCryptoProviders(cryptoLoader.DefaultRegistry),
 		runtime.WithHTTPMiddlewares(httpMiddlewareLoader.DefaultRegistry),
 		runtime.WithWorkflowComponents(workflowsLoader.DefaultRegistry),
+		runtime.WithRDB(rdbLoader.DefaultRegistry),
 	)
 	if err != nil {
 		log.Fatalf("fatal error from runtime: %s", err)

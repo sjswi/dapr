@@ -16,10 +16,10 @@ limitations under the License.
 package components
 
 import (
-	"github.com/dapr/components-contrib/bindings/huawei/obs"
+	"github.com/dapr/components-contrib/bindings/tmysql"
 	bindingsLoader "github.com/dapr/dapr/pkg/components/bindings"
 )
 
 func init() {
-	bindingsLoader.DefaultRegistry.RegisterOutputBinding(obs.NewHuaweiOBS, "huawei.obs")
+	bindingsLoader.DefaultRegistry.RegisterOutputBinding(tmysql.NewTMysql, "tmysql")
 }

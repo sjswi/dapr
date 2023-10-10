@@ -89,6 +89,9 @@ const (
 	ErrConfigurationGet                 = "failed to get %s from Configuration store %s: %s"
 	ErrConfigurationSubscribe           = "failed to subscribe %s from Configuration store %s: %s"
 	ErrConfigurationUnsubscribe         = "failed to unsubscribe to configuration request %s: %s"
+
+	// RDB
+	ErrRDBBegin = "failed to begin a transaction on %s: %s"
 )
 
 var (

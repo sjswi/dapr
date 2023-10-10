@@ -27,4 +27,5 @@ const (
 	CategoryCryptoProvider Category = "crypto"
 	CategoryLock           Category = "lock"
 	CategoryNameResolution Category = "nameresolution"
+	CategoryRDB            Category = "rdb"
 )

@@ -20,6 +20,7 @@ import (
 	"github.com/dapr/components-contrib/configuration"
 	"github.com/dapr/components-contrib/crypto"
 	"github.com/dapr/components-contrib/lock"
+	"github.com/dapr/components-contrib/rdb"
 	"github.com/dapr/components-contrib/secretstores"
 	"github.com/dapr/components-contrib/state"
 	"github.com/dapr/components-contrib/workflows"
@@ -48,6 +49,7 @@ type ComponentStore struct {
 	topicRoutes             map[string]TopicRoutes
 	workflowComponents      map[string]workflows.Workflow
 	cryptoProviders         map[string]crypto.SubtleCrypto
+	rdbs                    map[string]rdb.RDB
 	components              []compsv1alpha1.Component
 	subscriptions           []rtpubsub.Subscription
 	httpEndpoints           []httpEndpointV1alpha1.HTTPEndpoint

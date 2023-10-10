@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/dapr/components-contrib/rdb"
 	nethttp "net/http"
 	"strconv"
 	"strings"
@@ -96,6 +97,7 @@ const (
 	actorTypeParam           = "actorType"
 	actorIDParam             = "actorId"
 	storeNameParam           = "storeName"
+	rdbNameParam             = "rdbName"
 	stateKeyParam            = "key"
 	configurationKeyParam    = "key"
 	configurationSubscribeID = "configurationSubscribeID"
@@ -175,6 +177,7 @@ func NewAPI(opts APIOpts) API {
 	api.endpoints = append(api.endpoints, healthEndpoints...)
 	api.endpoints = append(api.endpoints, api.constructDistributedLockEndpoints()...)
 	api.endpoints = append(api.endpoints, api.constructWorkflowEndpoints()...)
+	api.endpoints = append(api.endpoints, api.constructRDBEndpoints()...)
 
 	api.publicEndpoints = append(api.publicEndpoints, metadataEndpoints...)
 	api.publicEndpoints = append(api.publicEndpoints, healthEndpoints...)
@@ -289,6 +292,41 @@ func (a *api) constructStateEndpoints() []Endpoint {
 			Route:   "state/{storeName}/query",
 			Version: apiVersionV1alpha1,
 			Handler: a.onQueryStateHandler(),
+		},
+	}
+}
+
+func (a *api) constructRDBEndpoints() []Endpoint {
+	return []Endpoint{
+		{
+			Methods: []string{nethttp.MethodGet},
+			Route:   "rdb/{rdbName}/begin",
+			Version: apiVersionV1,
+			Handler: a.onBeginRDB,
+		},
+		{
+			Methods: []string{nethttp.MethodPost, nethttp.MethodPut},
+			Route:   "rdb/{rdbName}/commit",
+			Version: apiVersionV1,
+			Handler: a.onCommitRDB,
+		},
+		{
+			Methods: []string{nethttp.MethodDelete},
+			Route:   "rdb/{rdbName}/rollback",
+			Version: apiVersionV1,
+			Handler: a.onRollback,
+		},
+		{
+			Methods: []string{nethttp.MethodPost, nethttp.MethodPut},
+			Route:   "rdb/{rdbName}/select",
+			Version: apiVersionV1,
+			Handler: a.onSelect,
+		},
+		{
+			Methods: []string{nethttp.MethodPost, nethttp.MethodPut},
+			Route:   "rdb/{rdbName}/exec",
+			Version: apiVersionV1,
+			Handler: a.onExec,
 		},
 	}
 }
@@ -638,6 +676,26 @@ func (a *api) getStateStoreWithRequestValidation(reqCtx *fasthttp.RequestCtx) (s
 		return nil, "", err
 	}
 	return state, storeName, nil
+}
+
+func (a *api) getRDBWithRequestValidation(reqCtx *fasthttp.RequestCtx) (rdb.RDB, string, error) {
+	if a.universal.CompStore.RDBsLen() == 0 {
+		err := messages.ErrStateStoresNotConfigured
+		log.Debug(err)
+		universalFastHTTPErrorResponder(reqCtx, err)
+		return nil, "", err
+	}
+
+	rdbName := a.getRDBName(reqCtx)
+
+	rdbClient, ok := a.universal.CompStore.GetRDB(rdbName)
+	if !ok {
+		err := messages.ErrStateStoreNotFound.WithFormat(rdbName)
+		log.Debug(err)
+		universalFastHTTPErrorResponder(reqCtx, err)
+		return nil, "", err
+	}
+	return rdbClient, rdbName, nil
 }
 
 // Route:   "workflows/{workflowComponent}/{workflowName}/start?instanceID={instanceID}",
@@ -1234,6 +1292,10 @@ func (a *api) etagError(err error) (bool, int, string) {
 
 func (a *api) getStateStoreName(reqCtx *fasthttp.RequestCtx) string {
 	return reqCtx.UserValue(storeNameParam).(string)
+}
+
+func (a *api) getRDBName(reqCtx *fasthttp.RequestCtx) string {
+	return reqCtx.UserValue(rdbNameParam).(string)
 }
 
 type invokeError struct {
@@ -2378,4 +2440,50 @@ func (a *api) SetDirectMessaging(directMessaging messaging.DirectMessaging) {
 
 func (a *api) SetActorRuntime(actor actors.Actors) {
 	a.universal.Actors = actor
+}
+
+func (a *api) onBeginRDB(reqCtx *fasthttp.RequestCtx) {
+	rdbClient, rdbName, err := a.getRDBWithRequestValidation(reqCtx)
+	if err != nil {
+		log.Debug(err)
+		return
+	}
+
+	//metadata := getMetadataFromRequest(reqCtx)
+
+	beginReq := &rdb.BeginRequest{}
+	start := time.Now()
+	policyRunner := resiliency.NewRunner[*rdb.BeginResponse](reqCtx,
+		a.resiliency.ComponentOutboundPolicy(rdbName, resiliency.RDB),
+	)
+	resp, err := policyRunner(func(ctx context.Context) (*rdb.BeginResponse, error) {
+		return rdbClient.Begin(reqCtx, beginReq)
+	})
+	if err != nil {
+		msg := NewErrorResponse("ERR_RDB_BEGIN", fmt.Sprintf(messages.ErrRDBBegin, rdbName, err.Error()))
+		respond(reqCtx, withError(nethttp.StatusInternalServerError, msg))
+		log.Debug(msg)
+		return
+	}
+	elapsed := diag.ElapsedSince(start)
+	log.Debug(resp)
+	diag.DefaultComponentMonitoring.StateInvoked(context.Background(), rdbName, diag.StateTransaction, err == nil, elapsed)
+
+	respond(reqCtx, withJSON(nethttp.StatusOK, []byte("ss")), withMetadata(nil))
+}
+
+func (a *api) onCommitRDB(ctx *fasthttp.RequestCtx) {
+
+}
+
+func (a *api) onRollback(ctx *fasthttp.RequestCtx) {
+
+}
+
+func (a *api) onSelect(ctx *fasthttp.RequestCtx) {
+
+}
+
+func (a *api) onExec(ctx *fasthttp.RequestCtx) {
+
 }

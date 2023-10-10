@@ -64,6 +64,7 @@ const (
 	Crypto                        ComponentType         = "Crypto"
 	Secretstore                   ComponentType         = "Secretstore"
 	Statestore                    ComponentType         = "Statestore"
+	RDB                           ComponentType         = "rdb"
 	Inbound                       ComponentDirection    = "Inbound"
 	Outbound                      ComponentDirection    = "Outbound"
 )

@@ -8,6 +8,7 @@ import (
 	httpMiddlewareLoader "github.com/dapr/dapr/pkg/components/middleware/http"
 	nrLoader "github.com/dapr/dapr/pkg/components/nameresolution"
 	pubsubLoader "github.com/dapr/dapr/pkg/components/pubsub"
+	rdbLoader "github.com/dapr/dapr/pkg/components/rdb"
 	secretstoresLoader "github.com/dapr/dapr/pkg/components/secretstores"
 	stateLoader "github.com/dapr/dapr/pkg/components/state"
 	workflowsLoader "github.com/dapr/dapr/pkg/components/workflows"
@@ -23,6 +24,7 @@ type (
 		pubsubRegistry            *pubsubLoader.Registry
 		nameResolutionRegistry    *nrLoader.Registry
 		bindingRegistry           *bindingsLoader.Registry
+		rdbRegistry               *rdbLoader.Registry
 		httpMiddlewareRegistry    *httpMiddlewareLoader.Registry
 		workflowComponentRegistry *workflowsLoader.Registry
 		cryptoProviderRegistry    *cryptoLoader.Registry
@@ -107,5 +109,12 @@ func WithWorkflowComponents(registry *workflowsLoader.Registry) Option {
 func WithComponentsCallback(componentsCallback ComponentsCallback) Option {
 	return func(o *runtimeOpts) {
 		o.componentsCallback = componentsCallback
+	}
+}
+
+// WithTest adds test components to the runtime.
+func WithRDB(registry *rdbLoader.Registry) Option {
+	return func(o *runtimeOpts) {
+		o.rdbRegistry = registry
 	}
 }

@@ -238,6 +238,7 @@ $(foreach ITEM,$(BINARIES),$(eval $(call genArchiveBinary,$(ITEM),$(ARCHIVE_OUT_
 manifest-gen: dapr.yaml
 
 dapr.yaml: check-docker-env
+	export DAPR_REGISTRY=test
 	$(info Generating helm manifest $(HELM_MANIFEST_FILE)...)
 	@mkdir -p $(HELM_OUT_DIR)
 	$(HELM) template \
